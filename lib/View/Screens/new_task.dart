@@ -1,221 +1,216 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:planner/Model/shared_preferences/shared_preferences.dart';
-import 'package:planner/Model/task_model/task_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../Model/shared_preferences/shared_preferences.dart';
+import '../../Model/task_model/task_model.dart';
 
-class NewTask extends StatefulWidget {
-  const NewTask({super.key});
+class NewTaskScreen extends StatefulWidget {
+  const NewTaskScreen({super.key});
 
   @override
-  State<NewTask> createState() => _NewTaskState();
+  State<NewTaskScreen> createState() => _NewTaskScreenState();
 }
 
-class _NewTaskState extends State<NewTask> {
-  DateTime? selectTime;
-  String? selectedLevel;
-  String? selectedCategory;
-  Color? chooseColor;
-  late TaskModel newTask;
-  List? tasks;
-  TextEditingController? controllerName = TextEditingController();
-  TextEditingController? controllerDescription = TextEditingController();
-  late SharedPreferencesService sharedPreferencesService;
+class _NewTaskScreenState extends State<NewTaskScreen> {
+  final _taskFormKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  DateTime? _selectedDate;
+  String? _selectedCategory;
+  String? _selectedLevel;
+  Color? _selectedColor;
 
   @override
-  void initState() {
-    super.initState();
-    initShared();
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
   }
 
-  void initShared() async {
-    final SharedPreferences pref = await SharedPreferences.getInstance();
-    sharedPreferencesService = SharedPreferencesService(pref);
-    loadTasks();
-  }
-
-  Future<void> loadTasks() async {
-    final loadedTasks = await sharedPreferencesService.getTasks();
-    setState(() {
-      tasks = loadedTasks;
-    });
-  }
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
+  Future<void> _pickDate(BuildContext context) async {
+    final pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (pickedDate != null && pickedDate != selectTime) {
+    if (pickedDate != null) {
       setState(() {
-        selectTime = pickedDate;
+        _selectedDate = pickedDate;
       });
     }
   }
 
+  void _addTask() {
+    if (_taskFormKey.currentState?.validate() ?? false) {
+      final newTask = TaskModel(
+        nameTask: _nameController.text,
+        category: _selectedCategory ?? '',
+        level: _selectedLevel ?? '',
+        descriptionTask: _descriptionController.text,
+        // date: _selectedDate,
+        color: _selectedColor,
+      );
+      SharedPrefsManager.instance.setTask(newTask);
+      _resetForm();
+      Navigator.pop(context, true);
+    }
+  }
+
+  void _resetForm() {
+    setState(() {
+      _nameController.clear();
+      _descriptionController.clear();
+      _selectedDate = null;
+      _selectedCategory = null;
+      _selectedLevel = null;
+      _selectedColor = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    GlobalKey<FormState> task = GlobalKey<FormState>();
     return Scaffold(
-      appBar: AppBar(
-       // backgroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Add Task')),
       body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(15)
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _taskFormKey,
+          child: Column(
+            //crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTextField(_nameController, 'Task Name', TextInputType.name),
+              const SizedBox(height: 16),
+              _buildTextField(
+                _descriptionController,
+                'Task Description',
+                TextInputType.text,
+                maxLines: 3,
               ),
-              margin: const EdgeInsets.all(15),
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                  key: task,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        controller: controllerName,
-                        keyboardType: TextInputType.name,
-                        decoration: const InputDecoration(
-                            border: OutlineInputBorder(), labelText: 'Name'),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      TextFormField(
-                        maxLines: 3,
-                        controller: controllerDescription,
-                        keyboardType: TextInputType.text,
-                        decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Description'),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Container(
-                        width: double.infinity,
-                        height: 60,
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(color: Colors.black)),
-                        child: DropdownButton(
-                          hint: const Text('Category'),
-                          value: selectedCategory,
-                          items: TaskModel().categories.map((String option) {
-                            return DropdownMenuItem<String>(
-                                value: option, child: Text(option));
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedCategory = value;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Container(
-                        width: double.infinity,
-                        height: 60,
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(color: Colors.black)),
-                        child: DropdownButton(
-                          hint: const Text('Level Import'),
-                          value: selectedLevel,
-                          items: TaskModel().levels.map((String option) {
-                            return DropdownMenuItem<String>(
-                                value: option, child: Text(option));
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedLevel = value;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                   InkWell(
-                     onTap: (){
-                       setState(() {
-                         _selectDate(context);
-                       });
-                     },
-                     child: Container(
-                       height: 60,
-                       width: double.infinity,
-                       decoration: BoxDecoration(
-                         borderRadius: BorderRadius.circular(6),
-                         border:Border.all(
-                           color: Colors.black
-                         )
-                       ),
-                       child: Center(child: selectTime != null? Text('$selectTime'):Text('Start Date')),
-                     ),
-                   ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      SizedBox(
-                        height: 70,
-                        child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemBuilder: (context, index) {
-                              return InkWell(
-                                onTap: (){
-                                  setState(() {
-                                    chooseColor=TaskModel().colors[index];
-                                  });
-                                },
-                                child: Container(
-                                  width: 55,
-                                  margin: const EdgeInsets.all(7),
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: TaskModel().colors[index]),
-                                ),
-                              );
-                            },
-                            itemCount: TaskModel().colors.length),
-                      ),
+              const SizedBox(height: 16),
+              _buildDropdown(
+                hint: 'Category',
+                value: _selectedCategory,
+                items: TaskModel().categories,
+                onChanged: (value) => setState(() {
+                  _selectedCategory = value;
+                }),
+              ),
+              const SizedBox(height: 16),
+              _buildDropdown(
+                hint: 'Importance Level',
+                value: _selectedLevel,
+                items: TaskModel().levels,
+                onChanged: (value) => setState(() {
+                  _selectedLevel = value;
+                }),
+              ),
+              const SizedBox(height: 16),
+              _buildDatePicker(context),
+              const SizedBox(height: 16),
+              _buildColorPicker(),
+              const SizedBox(height: 24),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _addTask,
+                  child: const Text('Add Task'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                    ],
-                  )),
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    loadTasks();
-                    TaskModel newTask = TaskModel(
-                      nameTask: controllerName?.text ?? '',
-                      category: selectedCategory ?? '',
-                      level: selectedLevel ?? '',
-                      descriptionTask: controllerDescription?.text ?? '',
-                      //date: selectTime,
-                    );
-                    sharedPreferencesService.setData('Task 5', newTask);
-                    if (kDebugMode) {
-                      TaskModel? task =
-                          sharedPreferencesService.getData('Task 5');
-                     print('Task: ${tasks?.length}');
-                    }
-                    controllerName!.clear();
-                    controllerDescription!.clear();
-                  });
-                },
-                style: const ButtonStyle(),
-                child: const Text('Add')),
-          ],
+  Widget _buildTextField(
+      TextEditingController controller, String label, TextInputType type,
+      {int maxLines = 1}) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: type,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return '$label is required';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildDropdown({
+    required String hint,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+      ),
+      hint: Text(hint),
+      value: value,
+      items: items
+          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildDatePicker(BuildContext context) {
+    return InkWell(
+      onTap: () => _pickDate(context),
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            _selectedDate != null
+                ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}' // تنسيق التاريخ يدويًا
+                : 'Select Date',
+            style: const TextStyle(fontSize: 16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorPicker() {
+    return Center(
+      child: SizedBox(
+        height: 60,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          // لمحاذاة الألوان في المنتصف
+          children: TaskModel().colors.map((color) {
+            return GestureDetector(
+              onTap: () => setState(() {
+                _selectedColor = color;
+              }),
+              child: Container(
+                width: 50,
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _selectedColor == color
+                        ? Colors.black
+                        : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );

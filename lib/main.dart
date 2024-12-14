@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'Model/shared_preferences/shared_preferences.dart';
 import 'View/Screens/home.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SharedPrefsManager.instance.init();
+
   runApp(const MyApp());
 }
 
@@ -11,14 +14,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       //theme: ThemeData.dark(),
-      home: const HomeScreen(),
+      home: HomeScreen(),
     );
   }
 }
-
 
 /*
 class TaskSearch extends StatefulWidget {

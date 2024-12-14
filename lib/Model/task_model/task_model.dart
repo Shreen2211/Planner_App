@@ -17,11 +17,11 @@ class TaskModel {
   List<String> levels = ['High Important', 'Mid Important', 'Low Important'];
   List<String> categories = ['Work', 'Home', 'Study', 'Fun', 'Other'];
   List<Color> colors = [
-    Color.fromRGBO(206, 237, 199, 1),
-    Color.fromRGBO(215, 227, 252, 1),
-    Color.fromRGBO(255, 212, 178, 1),
-    Color.fromRGBO(255, 148, 148, 1),
-    Color.fromRGBO(255, 246, 189, 1),
+    const Color.fromRGBO(206, 237, 199, 1),
+    const Color.fromRGBO(215, 227, 252, 1),
+    const Color.fromRGBO(255, 212, 178, 1),
+    const Color.fromRGBO(255, 148, 148, 1),
+    const Color.fromRGBO(255, 246, 189, 1),
   ];
 
   Map<String, dynamic> toJson() {

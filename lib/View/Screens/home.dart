@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:planner/Model/shared_preferences/shared_preferences.dart';
+import 'package:planner/Model/task_model/task_model.dart';
 import 'dart:async';
 
 import 'details_task.dart';
@@ -15,13 +17,13 @@ class _HomeScreenState extends State<HomeScreen> {
   bool check = false;
   late Timer _timer;
   String _currentTime = '';
+  late List<TaskModel> tasks = [];
 
   @override
   void dispose() {
     _timer.cancel();
     super.dispose();
   }
-
 
   void _updateTime() {
     setState(() {
@@ -30,9 +32,16 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _reloadTasks() {
+    setState(() {
+      tasks = SharedPrefsManager.instance.getTasks();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    tasks = SharedPrefsManager.instance.getTasks();
     _updateTime();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateTime();
@@ -60,14 +69,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 48, fontWeight: FontWeight.bold),
                 ),
               ),
-              const SizedBox(height: 10,),
+              const SizedBox(
+                height: 10,
+              ),
               TextFormField(
                 decoration: InputDecoration(
                   hintText: 'Search Task..',
                   labelText: 'Search',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15)
-                  ),
+                      borderRadius: BorderRadius.circular(15)),
                 ),
               ),
               Expanded(
@@ -125,9 +135,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      'Task One ',
-                                      style: TextStyle(fontSize: 20),
+                                    Text(
+                                      '${tasks[index].nameTask} ',
+                                      style: const TextStyle(fontSize: 20),
                                     ),
                                     Text(
                                       '20:00',
@@ -147,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   },
-                  itemCount: 15,
+                  itemCount: tasks.length,
                 ),
               ),
             ],
@@ -156,12 +166,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white,
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const NewTask(),
+                builder: (context) => const NewTaskScreen(),
               ));
+          if (result == true) {
+            _reloadTasks();
+          }
         },
         child: const Icon(Icons.add, color: Color.fromRGBO(250, 196, 217, 1)),
       ),
